@@ -3,18 +3,19 @@ id: gitlab-netlab-platforms
 type: project-guide
 discipline: proektuvannia-avtonomykh-merezh
 status: draft
-version: 4
-updated: '2026-10-31'
+version: 6
+updated: '2026-11-13'
 sources: []
 ---
 
 # ПР3: встановлення середовища з нуля
 
-Спочатку оберіть **один** маршрут. Встановлення виконується один раз перед написанням Dockerfile. Збережіть відкритим цей документ і протокол ПР3. Назви екранів інсталятора можуть змінюватися; посилання ведуть на офіційні інструкції з актуальними завантаженнями, перевірені 31.10.2026.
+Основний покроковий маршрут встановлення міститься в [P-01 ПР3](pr03.md#p-01-встановлення-й-власний-git-репозиторій). Цей довідник доповнює його альтернативними середовищами та доступом до панелей. Назви екранів інсталятора можуть змінюватися; посилання ведуть на офіційні інструкції з актуальними завантаженнями, перевірені 31.10.2026.
 
 | Ваша ОС | Основний маршрут | Де виконувати Bash-команди ПР |
 |---|---|---|
 | Windows | Ubuntu у WSL2 + Docker Desktop із WSL integration | Термінал Ubuntu у WSL |
+| Windows, проєкт на диску Windows | Git for Windows + Docker Desktop із Linux Engine | Git Bash; з PowerShell — явний виклик Git Bash нижче |
 | macOS | Docker Desktop для Apple Silicon або Intel відповідно до процесора | Terminal; для блоків ПР можна запустити bash |
 | Linux | Docker Engine + Compose plugin у навчальній Ubuntu | Термінал цієї Ubuntu |
 | Будь-яка ОС, обрана окрема VM | Ubuntu у сумісному гіпервізорі + Docker Engine | Термінал усередині VM |
@@ -23,7 +24,75 @@ sources: []
 
 Слабкий ноутбук: Docker Desktop Windows документує 8 GB RAM як системну вимогу, Mac — 4 GB. Це вимоги продукту, а не доведений мінімум нашого стенда з LLM. Engine в окремій Linux/WSL-системі — альтернативний маршрут, який потрібно випробувати на конкретному ПК. Не виділяйте VM всю RAM хоста. Якщо обладнання не відповідає вимогам, погодьте навчальний Linux-комп’ютер із викладачем; не підміняйте локальний inference готовим текстом.
 
-## Windows: основний маршрут
+## Windows: Git Bash і Docker Desktop
+
+Цей маршрут підходить, коли репозиторій зберігається на диску Windows і ви працюєте з Docker Desktop. Git Bash запускає команди протоколів, а контейнери виконує Linux Engine Docker Desktop. Це окремий маршрут від команд усередині користувацької Ubuntu WSL.
+
+1. Установіть [Git for Windows](https://gitforwindows.org/) та [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/). Після встановлення відкрийте новий термінал, щоб він отримав оновлений PATH.
+2. Запустіть Docker Desktop і дочекайтеся готовності Engine. Потрібні **Linux containers**. Якщо меню Docker пропонує Switch to Linux containers, переключіть режим.
+3. Створіть власну копію шаблону й клонуйте її за [git.md](git.md). У Провіднику відкрийте її корінь, оберіть Open Git Bash here. У Windows 11 за потреби спочатку натисніть «Показати додаткові параметри». Інший спосіб — відкрити Git Bash із меню Start і перейти до каталогу проєкту.
+4. У Git Bash виконайте `pwd`, `ls`, `git --version`, `docker version`, `docker compose version` та `docker info --format '{{.OSType}}'`. `ls` має показати compose.yaml і tests; Docker — Client і Server, тип Engine — linux. Якщо Server недоступний, спочатку виправте підключення до Docker Desktop.
+5. Заповніть Dockerfile і compose.yaml за P-02 ПР3, потім виконайте блок запуску й тестів із [P-02 ПР3](pr03.md#p-02-створити-dockerfile-і-compose). Порожні TODO не можуть дати 10/10.
+
+Усі блоки `bash` у протоколах виконуйте в цьому Git Bash. Якщо в PowerShell є команда `bash` або `wsl`, вона може запустити інше Linux-середовище. Для PowerShell використайте явний шлях до Git Bash у наступному розділі.
+
+### PowerShell: запуск того самого стенда
+
+Ці команди виконуйте **в PowerShell, відкритому в корені власного репозиторію**, після заповнення Dockerfile і compose.yaml у ПР3. Стандартний шлях Git Bash визначаємо через ProgramFiles:
+
+```powershell
+$netlabBash = Join-Path $env:ProgramFiles 'Git/bin/bash.exe'
+Test-Path $netlabBash
+docker version
+docker compose version
+docker info --format '{{.OSType}}'
+```
+
+Очікується `True`, Client і Server та `linux`. Якщо `False`, Git установлено в інший каталог або ще не встановлено: відкрийте Git Bash з меню Start та скористайтеся Bash-командами ПР3. Якщо Docker показує помилку, запустіть Desktop і виправте підключення до Engine перед продовженням. Права адміністратора для звичайного запуску стенда не потрібні, якщо доступ до Docker вже налаштовано.
+
+Виконуйте наступні команди по одній. Після кожного виклику перевіряйте повідомлення; при помилці виправте її, потім повторіть цей крок:
+
+```powershell
+if (-not (Test-Path '.env')) { Copy-Item '.env.example' '.env' }
+& $netlabBash -c 'sh tests/compose.sh pr03 config'
+& $netlabBash -c 'sh tests/compose.sh pr03 up -d --build'
+& $netlabBash -c 'sh tests/compose.sh pr03 ps'
+& $netlabBash -c 'sh tests/check.sh pr03'
+```
+
+| Команда | Результат і наступна дія |
+|---|---|
+| Умова з Copy-Item | Створює .env лише за його відсутності; уже налаштований файл зберігається |
+| config | Друкує валідну конфігурацію; помилка YAML потребує виправлення файлів до up |
+| up -d --build | Будує ваш toolbox і запускає його у фоновому режимі |
+| ps | Toolbox має стан Up/Running; при Exited прочитайте logs |
+| check.sh pr03 | Виконує 7 перевірок; повний успіх дає 10/10 і створює docs/reports/pr03.md |
+
+Код завершення останнього виклику Git Bash можна одразу подивитися через `$LASTEXITCODE`: `0` — успіх, інше значення — помилка. При несправних передумовах автопротокол пояснює проблему й не визначає остаточний бал. Порожній журнал toolbox із командою sleep є нормальним; це ще не доказ успіху тестів.
+
+Діагностика, зупинка й повторний запуск у тому самому PowerShell:
+
+```powershell
+& $netlabBash -c 'sh tests/compose.sh pr03 logs --tail 30 toolbox'
+& $netlabBash -c 'sh tests/compose.sh pr03 stop'
+& $netlabBash -c 'sh tests/compose.sh pr03 up -d'
+& $netlabBash -c 'sh tests/check.sh pr03'
+```
+
+Після нового відкриття PowerShell повторно задайте `$netlabBash`. `.env` та конфігурації повторно створювати не потрібно. У Git додайте згенерований docs/reports/pr03.md разом із власними конфігураціями й надішліть гілку/тег; для здачі потрібен тільки URL репозиторію.
+
+Якщо IMAGES повідомляє про невідповідний digest, номерний тег міг отримати нову збірку або локально залишився попередній образ. За актуального узгодженого lock-файла оновіть кеш образів ПР3 й повторіть побудову та тест:
+
+```powershell
+docker pull python:3.15.2-alpine
+docker pull docker:29.9.2-cli
+& $netlabBash -c 'sh tests/compose.sh pr03 up -d --build'
+& $netlabBash -c 'sh tests/check.sh pr03'
+```
+
+Це теги поточної редакції з .env.example. Якщо після pull перевірка знову не проходить, передайте викладачу текст IMAGES і отримайте перевірене оновлення шаблону. Самостійно підміняти очікуваний digest або вимикати перевірку не потрібно.
+
+## Windows: Ubuntu у WSL2
 
 1. Відкрийте PowerShell із правами адміністратора **для встановлення WSL**. Виконайте:
 
@@ -52,6 +121,14 @@ sudo apt install -y git
 ```
 
 apt update оновлює перелік пакетів; apt install встановлює Git. sudo запитує пароль створеного Linux-користувача. Очікується завершення без помилки. Перевірте готовність командами нижче. Репозиторій тримайте у файловій системі Ubuntu; клонуйте туди власний fork/import шаблону, а не працюйте з каталогом хоста через /mnt. Це рекомендація для файлової взаємодії WSL, а не жорстко задане ім’я каталогу.
+
+Якщо викликаєте Ubuntu з PowerShell, спочатку перевірте `wsl --list --verbose`: зірочка позначає дистрибутив за замовчуванням. Службовий `docker-desktop` обслуговує Docker Desktop і не є навчальною Ubuntu. Сам факт його наявності не означає готовність Ubuntu-маршруту. Перевірте Docker у потрібному дистрибутиві явно:
+
+```powershell
+wsl -d Ubuntu -- docker version
+```
+
+Тут `Ubuntu` — приклад точної назви з вашого списку; якщо у вас `Ubuntu-24.04`, замініть значення на `Ubuntu-24.04`. Очікуються Client і Server. Інакше перевірте WSL Integration саме для цього дистрибутива. Далі відкрийте термінал цієї Ubuntu, перейдіть у свій репозиторій і виконуйте Bash-команди ПР3. Не використовуйте узагальнене `wsl sh tests/check.sh pr03`, доки не перевірили, який саме дистрибутив воно запустить. [Docker: інтеграція з WSL](https://docs.docker.com/desktop/features/wsl/), [Microsoft: вибір дистрибутива](https://learn.microsoft.com/en-us/windows/wsl/basic-commands).
 
 ## macOS: Docker Desktop і Git
 
