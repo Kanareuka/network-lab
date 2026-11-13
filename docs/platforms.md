@@ -3,7 +3,7 @@ id: gitlab-netlab-platforms
 type: project-guide
 discipline: proektuvannia-avtonomykh-merezh
 status: draft
-version: 6
+version: 7
 updated: '2026-11-13'
 sources: []
 ---
@@ -14,7 +14,7 @@ sources: []
 
 | Ваша ОС | Основний маршрут | Де виконувати Bash-команди ПР |
 |---|---|---|
-| Windows | Ubuntu у WSL2 + Docker Desktop із WSL integration | Термінал Ubuntu у WSL |
+| Windows | Git for Windows + Docker Desktop із Linux Engine на WSL2 | Git Bash; з PowerShell — явний виклик Git Bash нижче |
 | Windows, проєкт на диску Windows | Git for Windows + Docker Desktop із Linux Engine | Git Bash; з PowerShell — явний виклик Git Bash нижче |
 | macOS | Docker Desktop для Apple Silicon або Intel відповідно до процесора | Terminal; для блоків ПР можна запустити bash |
 | Linux | Docker Engine + Compose plugin у навчальній Ubuntu | Термінал цієї Ubuntu |
@@ -113,14 +113,7 @@ wsl --list --verbose
 
 3. У Settings → Resources → WSL Integration увімкніть інтеграцію з вашою Ubuntu, застосуйте зміни. Якщо розділ недоступний, перевірте, що Desktop працює з Linux containers. Повний Hyper-V як окрема VM для цього маршруту не потрібний. Не встановлюйте паралельно Engine всередині тієї ж Ubuntu, коли користуєтеся Desktop integration: два daemon ускладнять розуміння, де ваші контейнери.
 
-4. Відкрийте **Ubuntu**, а не PowerShell. Встановіть Git:
-
-```bash
-sudo apt update
-sudo apt install -y git
-```
-
-apt update оновлює перелік пакетів; apt install встановлює Git. sudo запитує пароль створеного Linux-користувача. Очікується завершення без помилки. Перевірте готовність командами нижче. Репозиторій тримайте у файловій системі Ubuntu; клонуйте туди власний fork/import шаблону, а не працюйте з каталогом хоста через /mnt. Це рекомендація для файлової взаємодії WSL, а не жорстко задане ім’я каталогу.
+4. Перевірте Docker у вибраній Ubuntu командою з наступного блока. Git для Windows-маршруту встановлюється у Windows за P-01 ПР3; clone, commit і push виконуйте через Git Bash. Наявну копію проєкту у Windows не потрібно повторно клонувати в Ubuntu для запуску скриптів.
 
 Якщо викликаєте Ubuntu з PowerShell, спочатку перевірте `wsl --list --verbose`: зірочка позначає дистрибутив за замовчуванням. Службовий `docker-desktop` обслуговує Docker Desktop і не є навчальною Ubuntu. Сам факт його наявності не означає готовність Ubuntu-маршруту. Перевірте Docker у потрібному дистрибутиві явно:
 

@@ -3,7 +3,7 @@ id: gitlab-network-student-template
 type: project-guide
 discipline: proektuvannia-avtonomykh-merezh
 status: draft
-version: 8
+version: 9
 updated: '2026-11-13'
 sources: []
 ---
@@ -16,7 +16,7 @@ sources: []
 
 Відкрийте [ПР3 — встановлення середовища й початок проєкту](docs/pr03.md#p-01-встановлення-й-власний-git-репозиторій). Це покроковий маршрут з нуля: підготовка середовища для вашої ОС, встановлення Git і Docker, перевірка готовності, власна копія репозиторію, перша конфігурація та автотест.
 
-Основний Windows-маршрут у ПР3: Ubuntu WSL2 → Git в Ubuntu → Docker Desktop і WSL Integration. Там само описано альтернативу з Git Bash, macOS та Linux/VM. Оберіть свій маршрут і продовжуйте роботи в одній власній копії. Конкретне посилання на викладацький шаблон надає викладач.
+Основний Windows-маршрут у ПР3: WSL2 для Docker Desktop → Git for Windows і Git Bash → Docker Desktop із Linux Engine. Там само описано альтернативні середовища, macOS та Linux/VM. Оберіть свій маршрут і продовжуйте роботи в одній власній копії. Конкретне посилання на викладацький шаблон надає викладач.
 
 ## Навігація за роботами
 
